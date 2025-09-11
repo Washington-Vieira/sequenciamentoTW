@@ -79,7 +79,7 @@ flowchart TD
     A[Início: Abrir App] --> B{Credenciais OK?}
     B -- Não --> C[Sidebar: Acesso às Credenciais]
     C --> D[Informar PIN]
-    D --> E[Informar Token/Repo/Branch/Arquivo]
+    D --> E[Informar Token / Repo / Branch / Arquivo]
     E --> B
     B -- Sim --> F[Carregar Rotas do GitHub]
     F --> G[Selecionar Operação]
@@ -88,7 +88,7 @@ flowchart TD
     I -- Não --> J[Mostrar erro: colunas faltando]
     I -- Sim --> K[Merge Rotas x Cobertura]
     K --> L[Remover EXCEDENTE]
-    L --> M[Ordenar por Nível e Consumo(Pico)]
+    L --> M[Ordenar por Nível e Consumo - Pico]
     M --> N[Gerar sequência por Centro de Trabalho]
     N --> O[Exibir tabelas na tela]
     O --> P{Exportar Excel?}
@@ -97,9 +97,9 @@ flowchart TD
     P -- Não --> S[Fim]
 
     subgraph Atualizar Rotas para GitHub
-        T[Escolher arquivo local/upload] --> U[Clicar "Atualizar"]
-        U --> V[Enviar via API /contents (commit)]
-        V --> W[Rerun do App (URL estável)]
+        T[Escolher arquivo local / upload] --> U[Clicar Atualizar]
+        U --> V[Enviar via API /contents commit]
+        V --> W[Rerun do App - URL estável]
     end
 ```
 
