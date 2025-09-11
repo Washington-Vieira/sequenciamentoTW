@@ -4,5 +4,5 @@ __pycache__/
 .DS_Store
 .txt
 Administração de Kanbans.xlsx
-.streamlit
+.streamlit/secrets.toml
 Cronograma
