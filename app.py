@@ -11,38 +11,6 @@ import base64
 # Carregando variáveis de ambiente
 load_dotenv()
 
-# Forçar tema claro diretamente no app (CSS + tentativa de gravar preferência no localStorage)
-def force_light_theme():
-    js = """
-    <script>
-    try {
-        // salva preferência de tema (tenta várias chaves usadas por diferentes versões)
-        localStorage.setItem('streamlit:theme', JSON.stringify({"base":"light"}));
-        localStorage.setItem('theme', 'light');
-        document.documentElement.setAttribute('data-theme', 'light');
-    } catch(e){}
-    </script>
-    """
-
-    css = """
-    <style>
-    /* Força cores claras como fallback, independentemente do tema */
-    html, body, .stApp, .block-container {
-        background-color: #ffffff !important;
-        color: #000000 !important;
-    }
-    .stButton>button, .css-1emrehy.edgvbvh3 { background-color: #1f77b4 !important; color: #fff !important; }
-    </style>
-    """
-
-    try:
-        st.markdown(js + css, unsafe_allow_html=True)
-    except Exception:
-        pass
-
-# Aplica o tema claro logo no início
-force_light_theme()
-
 # Configuração da página
 st.set_page_config(
     page_title="Sequenciamento de Produção",
@@ -54,6 +22,38 @@ GITHUB_TOKEN = os.getenv('GITHUB_TOKEN', '').strip('"').strip()
 GITHUB_REPO = os.getenv('GITHUB_REPO', '').strip('"').strip()
 GITHUB_BRANCH = os.getenv('GITHUB_BRANCH', '').strip('"').strip()
 GITHUB_FILE = os.getenv('FILE_PATH', '').strip('"').strip() or 'Data/RotasProcesso.xlsx'
+
+# UI para sobrescrever credenciais na sessão (sem usar env ou secrets)
+with st.sidebar.expander('Credenciais GitHub (Sessão)'):
+    if 'gh_overrides' not in st.session_state:
+        st.session_state.gh_overrides = {}
+
+    token_input = st.text_input('Token GitHub', value=st.session_state.gh_overrides.get('token', ''), type='password')
+    repo_input = st.text_input('Repositório (URL ou owner/repo)', value=st.session_state.gh_overrides.get('repo', GITHUB_REPO))
+    branch_input = st.text_input('Branch', value=st.session_state.gh_overrides.get('branch', GITHUB_BRANCH))
+    file_input = st.text_input('Caminho do arquivo', value=st.session_state.gh_overrides.get('file', GITHUB_FILE))
+
+    if st.button('Aplicar credenciais'):
+        st.session_state.gh_overrides = {
+            'token': token_input.strip('"').strip(),
+            'repo': repo_input.strip('"').strip(),
+            'branch': branch_input.strip('"').strip(),
+            'file': file_input.strip('"').strip()
+        }
+        try:
+            st.rerun()
+        except Exception:
+            try:
+                st.experimental_rerun()
+            except Exception:
+                pass
+
+# Aplica overrides da sessão, se houver
+_ov = st.session_state.get('gh_overrides', {})
+GITHUB_TOKEN = _ov.get('token', GITHUB_TOKEN)
+GITHUB_REPO = _ov.get('repo', GITHUB_REPO)
+GITHUB_BRANCH = _ov.get('branch', GITHUB_BRANCH)
+GITHUB_FILE = _ov.get('file', GITHUB_FILE)
 
 # Função para extrair usuário/repositório do GitHub
 def clean_github_url(url):
@@ -241,7 +241,7 @@ with st.sidebar.expander('Atualizar Rotas Processo'):
             except Exception as e:
                 st.error(f'Erro ao ler arquivo local: {e}')
     if file_to_send is None:
-        uploaded_for_push = st.file_uploader('', type=['xlsx'])
+        uploaded_for_push = st.file_uploader('Selecione um arquivo .xlsx', type=['xlsx'], label_visibility='collapsed')
         if uploaded_for_push is not None:
             file_to_send = uploaded_for_push.read()
             file_label = getattr(uploaded_for_push, 'name', 'uploaded')
@@ -276,10 +276,10 @@ with st.sidebar.expander('Atualizar Rotas Processo'):
 # Função para verificar atualizações no GitHub
 @st.cache_data(ttl=300)  # Cache por 5 minutos
 def check_github_update():
-    token = os.getenv('GITHUB_TOKEN', '').strip('"')
-    repo = clean_github_url(os.getenv('GITHUB_REPO', ''))
-    branch = os.getenv('GITHUB_BRANCH', '').strip('"')
-    file_path = os.getenv('FILE_PATH', '').strip('"')
+    token = GITHUB_TOKEN
+    repo = clean_github_url(GITHUB_REPO)
+    branch = GITHUB_BRANCH
+    file_path = GITHUB_FILE
 
     if not all([token, repo, file_path]):
         return None
