@@ -23,30 +23,66 @@ GITHUB_REPO = os.getenv('GITHUB_REPO', '').strip('"').strip()
 GITHUB_BRANCH = os.getenv('GITHUB_BRANCH', '').strip('"').strip()
 GITHUB_FILE = os.getenv('FILE_PATH', '').strip('"').strip() or 'Data/RotasProcesso.xlsx'
 
-# UI para sobrescrever credenciais na sessão (sem usar env ou secrets)
-with st.sidebar.expander('Credenciais GitHub (Sessão)'):
-    if 'gh_overrides' not in st.session_state:
-        st.session_state.gh_overrides = {}
+# PIN para liberar a seção de credenciais (pode ser sobrescrito por env/secrets)
+GH_ACCESS_PIN = os.getenv('GH_ACCESS_PIN')
 
-    token_input = st.text_input('Token GitHub', value=st.session_state.gh_overrides.get('token', ''), type='password')
-    repo_input = st.text_input('Repositório (URL ou owner/repo)', value=st.session_state.gh_overrides.get('repo', GITHUB_REPO))
-    branch_input = st.text_input('Branch', value=st.session_state.gh_overrides.get('branch', GITHUB_BRANCH))
-    file_input = st.text_input('Caminho do arquivo', value=st.session_state.gh_overrides.get('file', GITHUB_FILE))
-
-    if st.button('Aplicar credenciais'):
-        st.session_state.gh_overrides = {
-            'token': token_input.strip('"').strip(),
-            'repo': repo_input.strip('"').strip(),
-            'branch': branch_input.strip('"').strip(),
-            'file': file_input.strip('"').strip()
-        }
-        try:
-            st.rerun()
-        except Exception:
+# Gate de acesso à tela de Credenciais
+with st.sidebar.expander('Acesso às Credenciais'):
+    if 'gh_access_granted' not in st.session_state:
+        st.session_state.gh_access_granted = False
+    pin_input = st.text_input('PIN de acesso', value='', type='password')
+    col_a1, col_a2 = st.columns(2)
+    with col_a1:
+        if st.button('Entrar'):
+            # Libera somente se o PIN for exatamente o esperado
+            if pin_input.strip() == GH_ACCESS_PIN:
+                st.session_state.gh_access_granted = True
+                try:
+                    st.rerun()
+                except Exception:
+                    try:
+                        st.experimental_rerun()
+                    except Exception:
+                        pass
+            else:
+                st.warning('PIN incorreto')
+    with col_a2:
+        if st.button('Sair'):
+            st.session_state.gh_access_granted = False
+            st.session_state.gh_overrides = {}
             try:
-                st.experimental_rerun()
+                st.rerun()
             except Exception:
-                pass
+                try:
+                    st.experimental_rerun()
+                except Exception:
+                    pass
+
+# UI para sobrescrever credenciais na sessão (sem usar env ou secrets)
+if st.session_state.get('gh_access_granted', False):
+    with st.sidebar.expander('Credenciais GitHub (Sessão)'):
+        if 'gh_overrides' not in st.session_state:
+            st.session_state.gh_overrides = {}
+
+        token_input = st.text_input('Token GitHub', value=st.session_state.gh_overrides.get('token', ''), type='password')
+        repo_input = st.text_input('Repositório (URL ou owner/repo)', value=st.session_state.gh_overrides.get('repo', GITHUB_REPO))
+        branch_input = st.text_input('Branch', value=st.session_state.gh_overrides.get('branch', GITHUB_BRANCH))
+        file_input = st.text_input('Caminho do arquivo', value=st.session_state.gh_overrides.get('file', GITHUB_FILE))
+
+        if st.button('Aplicar credenciais'):
+            st.session_state.gh_overrides = {
+                'token': token_input.strip('"').strip(),
+                'repo': repo_input.strip('"').strip(),
+                'branch': branch_input.strip('"').strip(),
+                'file': file_input.strip('"').strip()
+            }
+            try:
+                st.rerun()
+            except Exception:
+                try:
+                    st.experimental_rerun()
+                except Exception:
+                    pass
 
 # Aplica overrides da sessão, se houver
 _ov = st.session_state.get('gh_overrides', {})
