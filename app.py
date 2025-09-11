@@ -11,6 +11,38 @@ import base64
 # Carregando variáveis de ambiente
 load_dotenv()
 
+# Forçar tema claro diretamente no app (CSS + tentativa de gravar preferência no localStorage)
+def force_light_theme():
+    js = """
+    <script>
+    try {
+        // salva preferência de tema (tenta várias chaves usadas por diferentes versões)
+        localStorage.setItem('streamlit:theme', JSON.stringify({"base":"light"}));
+        localStorage.setItem('theme', 'light');
+        document.documentElement.setAttribute('data-theme', 'light');
+    } catch(e){}
+    </script>
+    """
+
+    css = """
+    <style>
+    /* Força cores claras como fallback, independentemente do tema */
+    html, body, .stApp, .block-container {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+    }
+    .stButton>button, .css-1emrehy.edgvbvh3 { background-color: #1f77b4 !important; color: #fff !important; }
+    </style>
+    """
+
+    try:
+        st.markdown(js + css, unsafe_allow_html=True)
+    except Exception:
+        pass
+
+# Aplica o tema claro logo no início
+force_light_theme()
+
 # Configuração da página
 st.set_page_config(
     page_title="Sequenciamento de Produção",
