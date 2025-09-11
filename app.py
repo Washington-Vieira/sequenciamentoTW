@@ -297,15 +297,14 @@ with st.sidebar.expander('Atualizar Rotas Processo'):
                     pass
 
                 # Observação: o endpoint /contents já cria um commit remoto.
-                # Para forçar um rerun compatível com diferentes versões do Streamlit,
-                # atualizamos os query params (isso provoca rerun no navegador).
+                # Força apenas o rerun local sem alterar a URL (mantém link estável)
                 try:
-                    params = st.experimental_get_query_params()
-                    params['_updated'] = str(int(time.time()))
-                    st.experimental_set_query_params(**params)
+                    st.rerun()
                 except Exception:
-                    # fallback simples
-                    st.experimental_set_query_params(_updated=str(int(time.time())))
+                    try:
+                        st.experimental_rerun()
+                    except Exception:
+                        pass
             else:
                 st.sidebar.error(msg)
 
